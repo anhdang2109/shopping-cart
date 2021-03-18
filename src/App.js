@@ -5,13 +5,11 @@ import Payment from "./payment";
 
 function App() {
   return (
-      <body>
       <main>
         <Header></Header>
         <ProductList></ProductList>
         <Payment></Payment>
       </main>
-      </body>
   );
 }
 
