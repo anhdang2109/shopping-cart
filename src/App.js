@@ -1,143 +1,106 @@
 import './App.css';
-import { useState } from "react";
-const PRODUCTS = [
-    {
-        id: 1,
-        name: 'IPHONE XS',
-        description: 'Description for iphone',
-        image: 'https://www.techone.vn/wp-content/uploads/2019/10/Untitled-1.jpg',
-        price: '5.99',
-        quantity: '1'
-    },
-    {
-        id: 2,
-        name: 'IPAD MINI',
-        description: 'Description for ipad',
-        image: 'https://www.techone.vn/wp-content/uploads/2020/09/May-tinh-bang-iPad-10.2-2020-Gen-8-32GB-Wifi-250x250.jpg',
-        price: '15.99',
-        quantity: '2'
-    },
-    {
-        id: 3,
-        name: 'IPHONE XS',
-        description: 'Description for iphone',
-        image: 'https://www.techone.vn/wp-content/uploads/2019/10/Untitled-1.jpg',
-        price: '5.99',
-        quantity: '1'
-    },
-    {
-        id: 4,
-        name: 'IPAD MINI',
-        description: 'Description for ipad',
-        image: 'https://www.techone.vn/wp-content/uploads/2020/09/May-tinh-bang-iPad-10.2-2020-Gen-8-32GB-Wifi-250x250.jpg',
-        price: '15.99',
-        quantity: '3'
-    }
-]
+import {useState} from "react";
+import {PRODUCTS, PROMO_CODES} from "./mockData";
+
 
 function App() {
-    let productLists;
-    let promoCode = ['SUMMER','FREE','LUCKY'];
-    let totalQuantityNumber = totalQuantity();
-    let totalPriceNumber = totalPrice();
-    let taxNumber = tax(totalPriceNumber)
-    let totalBillNumber = totalBill(totalPriceNumber, taxNumber);
-
-
     const [products, setProducts] = useState(PRODUCTS);
-    const [totalQuantityHook, setTotalQuantityHook] = useState(totalQuantityNumber);
-    const [totalPriceHook, setTotalPriceHook] = useState(totalPriceNumber);
-    const [taxHook, setTaxHook] = useState(taxNumber);
-    const [totalBillHook, setTotalBillHook] = useState(totalBillNumber);
-    const [discount, setDiscount] = useState(0);
+    const [promo, setPromo] = useState(null);
 
+    let productLists;
+    let discount;
+    let totalNumber;
+    let totalQuantityNumber = 0;
+    let totalPriceNumber = 0;
+    let discountNumber = 0;
+    let taxNumber = 0
+    let totalBillNumber = 0;
+
+    // Initial value
+    totalQuantity();
+    totalPrice();
+    applyPromo(totalPriceNumber);
+    tax(discountNumber);
+    totalBill(discountNumber, taxNumber);
 
     function reset() {
         setProducts(PRODUCTS);
-        document.querySelector("#totalNumber").classList.remove("hidden");
     }
-    function updateData() {
-        setTotalQuantityHook(totalQuantity());
-        let newTotalPrice = totalPrice()
-        let newTax = tax(newTotalPrice)
-        setTotalPriceHook(newTotalPrice);
-        setTaxHook(newTax);
-        setTotalBillHook(totalBill(newTotalPrice, newTax));
-    }
+
     function checkPromoCode() {
-        let inputCode = '';
-        let truePromo = false;
+        let inputCode;
         inputCode = document.getElementById("promo-code").value;
-        for (let i = 0; i < promoCode.length; i++) {
-            if (promoCode[i] === inputCode) truePromo = true
+        console.log(inputCode)
+        for (let i = 0; i < PROMO_CODES.length; i++) {
+            if (PROMO_CODES[i].code === inputCode) {
+                setPromo(PROMO_CODES[i])
+                return true
+            }
         }
-        if (truePromo === true) {
-            setDiscount(50)
-            let newTotalPrice = totalPrice()/2
-            let newTax = tax(newTotalPrice)
-            setTotalPriceHook(newTotalPrice);
-            setTaxHook(newTax);
-            setTotalBillHook(totalBill(newTotalPrice, newTax));
-        }
-        else {
-            alert("Bạn nhập không đúng mã giảm giá!")
-            setDiscount(0)
-            let newTotalPrice = totalPrice()
-            let newTax = tax(newTotalPrice)
-            setTotalPriceHook(newTotalPrice);
-            setTaxHook(newTax);
-            setTotalBillHook(totalBill(newTotalPrice, newTax));
-        }
+        alert("Bạn nhập sai mã!")
+        setPromo(null)
+        return false
     }
-    function changeQuantity(id,value) {
-        let selectedProduct = findById(id);
-        let index = PRODUCTS.indexOf(selectedProduct);
-        PRODUCTS[index].quantity = Number(value);
-        updateData();
+
+    function changeQuantity(id, value) {
+        let newProducts = [...products];
+        let index = newProducts.findIndex((product) => product.id === id);
+        newProducts[index].quantity = Number(value);
+        setProducts(newProducts);
     }
+
     function removeProduct(id) {
-        let newProductsLength = products.length;
         if (window.confirm('Bạn có chắc là muốn xoá sản phẩm này?')) {
             let selectedProduct = findById(id);
-            let index = PRODUCTS.indexOf(selectedProduct);
+            let index = products.indexOf(selectedProduct);
             if (index > -1) {
                 setProducts(products => products.filter(product => product.id !== id))
-                newProductsLength -= 1;
-            }
-            updateData();
-            if (newProductsLength === 0) {
-                document.querySelector("#totalNumber").classList.add("hidden");
             }
         }
     }
+
     function findById(id) {
         let result;
-        for (let i = 0; i < PRODUCTS.length; i++) {
-            if (id === PRODUCTS[i].id) result = PRODUCTS[i]
+        for (let i = 0; i < products.length; i++) {
+            if (id === products[i].id) result = products[i]
         }
         return result;
     }
+
     function totalQuantity() {
-        let count = 0;
-        for (let i = 0; i < PRODUCTS.length; i++) {
-            count += Number(PRODUCTS[i].quantity)
+        for (let i = 0; i < products.length; i++) {
+            totalQuantityNumber += Number(products[i].quantity)
         }
-        return count
-    }
-    function totalPrice() {
-        let total = 0;
-        for (let i = 0; i < PRODUCTS.length; i++) {
-            total += Number(PRODUCTS[i].price) * Number(PRODUCTS[i].quantity)
-        }
-        return total
-    }
-    function tax(totalPrice) {
-        return (Number(totalPrice) * 0.1)
-    }
-    function totalBill(totalPrice, tax) {
-        return (Number(totalPrice) + Number(tax))
+        return totalQuantityNumber
     }
 
+    function totalPrice() {
+        for (let i = 0; i < products.length; i++) {
+            totalPriceNumber += Number(products[i].price) * Number(products[i].quantity)
+        }
+        return totalPriceNumber
+    }
+
+    function applyPromo(totalPriceNumber) {
+        if (promo) {
+            discountNumber = Number(totalPriceNumber) * (1 - ( promo.discountPercent / 100))
+            return discount
+        } else {
+            discountNumber = totalPriceNumber
+        }
+    }
+
+    function tax(discountNumber) {
+        taxNumber = Number(discountNumber) * 0.1
+        return taxNumber
+    }
+
+    function totalBill(totalPrice, tax) {
+        totalBillNumber = Number(totalPrice) + Number(tax)
+        return totalBillNumber
+    }
+
+    // Product list
     if (products.length !== 0) {
         productLists = products.map((product) =>
             <li key={product.id} className="row">
@@ -162,7 +125,7 @@ function App() {
                                className="quantity"
                                id=""
                                step="1"
-                               onChange={event => changeQuantity(product.id,event.target.value)}
+                               onChange={event => changeQuantity(product.id, event.target.value)}
                                defaultValue={product.quantity}/>
                     </div>
 
@@ -183,10 +146,46 @@ function App() {
                 </div>
             </li>
         );
+    } else {
+        productLists = <div><h1>"Không có sản phẩm nào trong giỏ"</h1>
+            <button onClick={() => reset()} type="button">Quay lại mua hàng</button>
+        </div>;
     }
-    else {
-        productLists = <div><h1>"Không có sản phẩm nào trong giỏ"</h1><button onClick={() => reset()} type="button">Quay lại mua hàng</button></div>;
+    // Disount
+    if (promo) {
+        discount =
+            <div id="discount">
+                <li>Promo <span>{promo.discountPercent} %</span></li>
+                <li>Discount <span>${discountNumber.toFixed(2)}</span></li>
+            </div>
+    } else {
+        discount = <div></div>
     }
+
+    // totalNumber
+    if (products.length !== 0) {
+        totalNumber = <section className="container">
+            <div className="promotion">
+                <label htmlFor="promo-code">Have A Promo Code?</label>
+                <input type="text" id="promo-code"/>
+                <button type="button" onClick={() => checkPromoCode()}/>
+            </div>
+
+            <div className="summary">
+                <ul>
+                    <li>Subtotal <span>${totalPriceNumber.toFixed(2)}</span></li>
+                    {discount}
+                    <li>Tax <span>${taxNumber.toFixed(2)}</span></li>
+                    <li className="total">Total <span>${totalBillNumber.toFixed(2)}</span></li>
+                </ul>
+            </div>
+
+            <div className="checkout">
+                <button type="button">Check Out</button>
+            </div>
+        </section>
+    }
+
     return (
         <main>
             <header className="container">
@@ -197,33 +196,14 @@ function App() {
                     <li>Shopping Cart</li>
                 </ul>
 
-                <span className="count">{totalQuantityHook} items in the bag</span>
+                <span className="count">{totalQuantityNumber} items in the bag</span>
             </header>
             <section className="container">
                 <ul className="products">
                     {productLists}
                 </ul>
             </section>
-            <section id="totalNumber" className="container">
-                <div className="promotion">
-                    <label htmlFor="promo-code">Have A Promo Code?</label>
-                    <input type="text" id="promo-code"/>
-                    <button type="button" onClick={() => checkPromoCode()}> </button>
-                </div>
-
-                <div className="summary">
-                    <ul>
-                        <li>Subtotal <span>${totalPriceHook.toFixed(2)}</span></li>
-                        <li>Discount <span>{discount} %</span></li>
-                        <li>Tax <span>${taxHook.toFixed(2)}</span></li>
-                        <li className="total">Total <span>${totalBillHook.toFixed(2)}</span></li>
-                    </ul>
-                </div>
-
-                <div className="checkout">
-                    <button type="button">Check Out</button>
-                </div>
-            </section>
+            {totalNumber}
         </main>
     );
 }
